@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct PublicaManifestParserApp: App {
+
+    @StateObject private var viewModel = ManifestViewModel()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(viewModel)
         }
     }
 }

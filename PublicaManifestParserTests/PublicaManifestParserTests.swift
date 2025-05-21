@@ -18,19 +18,53 @@ final class PublicaManifestParserTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func testNoAdBreaks() throws {
+        let manifest = """
+        #EXTINF:5,
+        #EXTINF:3,
+        """
+
+        let parser = ManifestParser()
+        try parser.parse(manifestContent: manifest)
+        let adBreaks = parser.getAdBreaks()
+        XCTAssertEqual(adBreaks.count, 0)
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+    func testSingleAdBreak() throws {
+        let manifest = """
+        #EXTINF:5,
+        #EXTINF:10,
+        #EXT-X-DISCONTINUITY
+        #EXTINF:3,
+        #EXT-X-DISCONTINUITY
+        #EXTINF:2,
+        """
+
+        let parser = ManifestParser()
+        try parser.parse(manifestContent: manifest)
+        let adBreaks = parser.getAdBreaks()
+        XCTAssertEqual(adBreaks.count, 1)
+        let adBreak = adBreaks[0]
+        XCTAssertEqual(adBreak.startTime, 15)
+        XCTAssertEqual(adBreak.endTime, 18)
+        XCTAssertEqual(adBreak.duration, 3)
+    }
+
+    func testUnclosedAdBreak() throws {
+        let manifest = """
+        #EXTINF:5,
+        #EXT-X-DISCONTINUITY
+        #EXTINF:3,
+        """
+
+        let parser = ManifestParser()
+        try parser.parse(manifestContent: manifest)
+        let adBreaks = parser.getAdBreaks()
+        XCTAssertEqual(adBreaks.count, 1)
+        let adBreak = adBreaks[0]
+        XCTAssertEqual(adBreak.startTime, 5)
+        XCTAssertEqual(adBreak.endTime, 8)
+        XCTAssertEqual(adBreak.duration, 3)
     }
 
 }
